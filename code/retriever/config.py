@@ -3,9 +3,9 @@ class parameters():
     prog_name = "retriever"
 
     # set up your own path here
-    root_path = "kaggle/working/FinQA"
-    output_path = "kaggle/working/FinQA/output"
-    cache_dir = "kaggle/working/FinQA/cache"
+    root_path = "/kaggle/working/FinQA"
+    output_path = "/kaggle/working/FinQA/output"
+    cache_dir = "/kaggle/working/FinQA/cache"
 
     # the name of your result folder.
     model_save_name = "retriever-bert-base-test"
@@ -15,8 +15,8 @@ class parameters():
 
     test_file = root_path + "dataset/test.json"
 
-    op_list_file = "kaggle/working/FinQA/code/retriever/operation_list.txt"
-    const_list_file = "kaggle/working/FinQA/code/retriever/constant_list.txt"
+    op_list_file = "/kaggle/working/FinQA/code/retriever/operation_list.txt"
+    const_list_file = "/kaggle/working/FinQA/code/retriever/constant_list.txt"
 
     # model choice: bert, roberta
     pretrained_model = "bert"
