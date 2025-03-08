@@ -10,10 +10,10 @@ class parameters():
     # the name of your result folder.
     model_save_name = "retriever-bert-base-test"
 
-    train_file = root_path + "dataset/train.json"
-    valid_file = root_path + "dataset/dev.json"
+    train_file = root_path + "/dataset/train.json"
+    valid_file = root_path + "/dataset/dev.json"
 
-    test_file = root_path + "dataset/test.json"
+    test_file = root_path + "/dataset/test.json"
 
     op_list_file = "/kaggle/working/FinQA/code/retriever/operation_list.txt"
     const_list_file = "/kaggle/working/FinQA/code/retriever/constant_list.txt"
