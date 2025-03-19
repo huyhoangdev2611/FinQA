@@ -14,7 +14,7 @@ from config import parameters as conf
 from torch import nn
 import torch
 import torch.optim as optim
-
+import shutil  # Thêm import để xóa thư mục
 
 from Model import Bert_model
 
@@ -32,8 +32,7 @@ elif conf.pretrained_model == "roberta":
 
 # create output paths
 if conf.mode == "train":
-    model_dir_name = conf.model_save_name + "_" + \
-        datetime.now().strftime("%Y%m%d%H%M%S")
+    model_dir_name = conf.model_save_name + "_" + datetime.now().strftime("%Y%m%d%H%M%S")
     model_dir = os.path.join(conf.output_path, model_dir_name)
     results_path = os.path.join(model_dir, "results")
     saved_model_path = os.path.join(model_dir, "saved_model")
@@ -44,8 +43,7 @@ if conf.mode == "train":
 else:
     saved_model_path = os.path.join(conf.output_path, conf.saved_model_path)
     model_dir_name = datetime.now().strftime("%Y%m%d%H%M%S")
-    model_dir = os.path.join(
-        conf.output_path, 'inference_only_' + model_dir_name)
+    model_dir = os.path.join(conf.output_path, 'inference_only_' + model_dir_name)
     results_path = os.path.join(model_dir, "results")
     os.makedirs(results_path, exist_ok=False)
     log_file = os.path.join(results_path, 'log.txt')
@@ -77,13 +75,31 @@ kwargs = {"examples": train_examples,
           "max_seq_length": conf.max_seq_length,
           }
 
-
 train_features = convert_examples_to_features(**kwargs)
 kwargs["examples"] = valid_examples
 kwargs["is_training"] = False
 valid_features = convert_examples_to_features(**kwargs)
 kwargs["examples"] = test_examples
 test_features = convert_examples_to_features(**kwargs)
+
+
+def cleanup_checkpoints():
+    """
+    Xóa các checkpoint cũ, chỉ giữ lại 3 checkpoint mới nhất trong thư mục saved_model_path/loads.
+    """
+    checkpoint_dir = os.path.join(saved_model_path, 'loads')
+    if not os.path.exists(checkpoint_dir):
+        return
+    # Lấy danh sách các thư mục checkpoint (giả sử tên thư mục là số)
+    checkpoint_list = [d for d in os.listdir(checkpoint_dir) if os.path.isdir(os.path.join(checkpoint_dir, d))]
+    if len(checkpoint_list) > 3:
+        # Sắp xếp theo thứ tự số (giả sử tên thư mục có thể ép kiểu thành int)
+        checkpoint_list = sorted(checkpoint_list, key=lambda x: int(x))
+        # Xóa các checkpoint cũ nhất
+        for folder in checkpoint_list[:-3]:
+            full_path = os.path.join(checkpoint_dir, folder)
+            shutil.rmtree(full_path)
+            write_log(log_file, "Đã xóa checkpoint cũ: " + full_path)
 
 
 def train():
@@ -153,18 +169,17 @@ def train():
                 start_time = time.time()
                 if k // conf.report >= 1:
                     print("Val test")
-                    # save model
-                    saved_model_path_cnt = os.path.join(
-                        saved_model_path, 'loads', str(k // conf.report))
+                    # lưu model
+                    saved_model_path_cnt = os.path.join(saved_model_path, 'loads', str(k // conf.report))
                     os.makedirs(saved_model_path_cnt, exist_ok=True)
-                    torch.save(model.state_dict(),
-                               saved_model_path_cnt + "/model.pt")
+                    torch.save(model.state_dict(), saved_model_path_cnt + "/model.pt")
+                    
+                    # Gọi hàm cleanup để xóa các checkpoint cũ, chỉ giữ lại 3 mới nhất
+                    cleanup_checkpoints()
 
-                    results_path_cnt = os.path.join(
-                        results_path, 'loads', str(k // conf.report))
+                    results_path_cnt = os.path.join(results_path, 'loads', str(k // conf.report))
                     os.makedirs(results_path_cnt, exist_ok=True)
-                    validation_result = evaluate(
-                        valid_examples, valid_features, model, results_path_cnt, 'valid')
+                    validation_result = evaluate(valid_examples, valid_features, model, results_path_cnt, 'valid')
                     # write_log(log_file, validation_result)
 
                 model.train()
@@ -213,8 +228,7 @@ def evaluate(data_ori, data, model, ksave_dir, mode='valid'):
             all_filename_id.extend(filename_id)
             all_ind.extend(ind)
 
-    output_prediction_file = os.path.join(ksave_dir_mode,
-                                          "predictions.json")
+    output_prediction_file = os.path.join(ksave_dir_mode, "predictions.json")
 
     if mode == "valid":
         print_res = retrieve_evaluate(
