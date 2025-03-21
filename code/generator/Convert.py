@@ -346,7 +346,7 @@ if __name__ == '__main__':
     # convert_train(json_in, json_out, topn=3, max_len=290)
 
 
-    json_in = root + "output/inference_only_20220513220539_solo_private_test/results/private/predictions.json"
+    json_in = root + "output/inference_only_20220513220539/results/private/predictions.json"
     json_out = root + "output/heldout_final/solo_private_test_retrieve_correct.json"
     convert_test(json_in, json_out, topn=3, max_len=290)
 
