@@ -33,7 +33,7 @@ class parameters():
 
     ### to load the trained model in test time
     saved_model_path = output_path + \
-        "bert-base-6k_20210427232814/saved_model/loads/3/model.pt"
+        "/bert-base-6k_20210427232814/saved_model/loads/3/model.pt"
     build_summary = False
 
     option = "rand"

@@ -339,15 +339,15 @@ def convert_test_infer(json_in, json_out, topn, mode):
 
 if __name__ == '__main__':
 
-    root = "/mnt/george_bhd/zhiyuchen/"
+    root = "/kaggle/working/FinQA/"
 
     # json_in = root + "outputs/inference_only_20220504054235_new_correct_retriever_train/results/test/predictions.json"
     # json_out = root + "finQA/dataset/train_retrieve_correct.json"
     # convert_train(json_in, json_out, topn=3, max_len=290)
 
 
-    json_in = root + "outputs/inference_only_20220513220539_solo_private_test/results/private/predictions.json"
-    json_out = root + "finQA/heldout_final/solo_private_test_retrieve_correct.json"
+    json_in = root + "output/inference_only_20220513220539_solo_private_test/results/private/predictions.json"
+    json_out = root + "output/heldout_final/solo_private_test_retrieve_correct.json"
     convert_test(json_in, json_out, topn=3, max_len=290)
 
 

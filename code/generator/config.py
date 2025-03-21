@@ -3,9 +3,9 @@ class parameters():
     prog_name = "generator"
 
     # set up your own path here
-    root_path = "your_project_path"
-    output_path = "path_to_store_outputs"
-    cache_dir = "path_for_other_cache"
+    root_path = "/kaggle/working/FinQA"
+    output_path = "/kaggle/working/output"
+    cache_dir = "/kaggle/working/cache"
 
     model_save_name = "bert-base"
 
@@ -21,8 +21,8 @@ class parameters():
     # infer table-only text-only
     # test_file = root_path + "dataset/test_retrieve_7k_text_only.json"
 
-    op_list_file = "operation_list.txt"
-    const_list_file = "constant_list.txt"
+    op_list_file = "/kaggle/working/FinQA/code/retriever/operation_list.txt"
+    const_list_file = "/kaggle/working/FinQA/code/retriever/constant_list.txt"
 
     # # model choice: bert, roberta, albert
     pretrained_model = "bert"
@@ -34,7 +34,7 @@ class parameters():
 
     # # finbert
     # pretrained_model = "finbert"
-    # model_size = root_path + "pre-trained-models/finbert/"
+    # model_size = root_path + "/pre-trained-models/finbert/"
 
     # pretrained_model = "longformer"
     # model_size = "allenai/longformer-base-4096"
