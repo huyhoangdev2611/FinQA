@@ -14,9 +14,9 @@ class parameters():
     # test_file = root_path + "dataset/test.json"
 
     ### files from the retriever results
-    train_file = root_path + "dataset/train_retrieve.json"
-    valid_file = root_path + "dataset/dev_retrieve.json"
-    test_file = root_path + "dataset/test_retrieve.json"
+    train_file = root_path + "/dataset/train_retrieve.json"
+    valid_file = root_path + "/dataset/dev_retrieve.json"
+    test_file = root_path + "/dataset/test_retrieve.json"
 
     # infer table-only text-only
     # test_file = root_path + "dataset/test_retrieve_7k_text_only.json"
