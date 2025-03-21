@@ -340,15 +340,27 @@ def convert_test_infer(json_in, json_out, topn, mode):
 if __name__ == '__main__':
 
     root = "/kaggle/working/FinQA/"
+    # Cập nhật đường dẫn gốc
+
+    # Đường dẫn tới các tệp dữ liệu đầu vào và đầu ra
+    json_in = root + "output/inference_only_20220513220539/results/private/predictions.json"  # Đầu vào từ retriever inference
+    json_out_train = root + "/datasets/train_retrieve.json"  # Đầu ra cho tệp huấn luyện của generator
+    json_out_dev = root + "/datasets/dev_retrieve.json"  # Đầu ra cho tệp kiểm tra (validation) của generator
+    json_out_test = root + "/datasets/test_retrieve.json"  # Đầu ra cho tệp kiểm tra cuối cùng của generator
+
+    # Gọi hàm convert để tạo ra các tệp train, dev, test
+    convert_test(json_in, json_out_test, topn=3, max_len=290)
+    convert_train(json_in, json_out_train, topn=3, max_len=290)
+    convert_test(json_in, json_out_dev, topn=3, max_len=290)
 
     # json_in = root + "outputs/inference_only_20220504054235_new_correct_retriever_train/results/test/predictions.json"
     # json_out = root + "finQA/dataset/train_retrieve_correct.json"
     # convert_train(json_in, json_out, topn=3, max_len=290)
 
 
-    json_in = root + "output/inference_only_20220513220539/results/private/predictions.json"
-    json_out = root + "output/heldout_final/solo_private_test_retrieve_correct.json"
-    convert_test(json_in, json_out, topn=3, max_len=290)
+    # json_in = root + "output/inference_only_20220513220539/results/private/predictions.json"
+    # json_out = root + "output/heldout_final/solo_private_test_retrieve_correct.json"
+    # convert_test(json_in, json_out, topn=3, max_len=290)
 
 
     # ### fake data for infer experiments
