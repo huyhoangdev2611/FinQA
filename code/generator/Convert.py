@@ -344,9 +344,9 @@ if __name__ == '__main__':
 
     # Đường dẫn tới các tệp dữ liệu đầu vào và đầu ra
     json_in = root + "output/inference_only_20220513220539/results/private/predictions.json"  # Đầu vào từ retriever inference
-    json_out_train = root + "datasets/train_retrieve.json"  # Đầu ra cho tệp huấn luyện của generator
-    json_out_dev = root + "datasets/dev_retrieve.json"  # Đầu ra cho tệp kiểm tra (validation) của generator
-    json_out_test = root + "datasets/test_retrieve.json"  # Đầu ra cho tệp kiểm tra cuối cùng của generator
+    json_out_train = root + "dataset/train_retrieve.json"  # Đầu ra cho tệp huấn luyện của generator
+    json_out_dev = root + "dataset/dev_retrieve.json"  # Đầu ra cho tệp kiểm tra (validation) của generator
+    json_out_test = root + "dataset/test_retrieve.json"  # Đầu ra cho tệp kiểm tra cuối cùng của generator
 
     # Gọi hàm convert để tạo ra các tệp train, dev, test
     convert_test(json_in, json_out_test, topn=3, max_len=290)
