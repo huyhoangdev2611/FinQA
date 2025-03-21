@@ -4,8 +4,8 @@ class parameters():
 
     # set up your own path here
     root_path = "/kaggle/working/FinQA"
-    output_path = "/kaggle/working/output"
-    cache_dir = "/kaggle/working/cache"
+    output_path = "/kaggle/working/FinQA/output"
+    cache_dir = "/kaggle/working/FinQA/cache"
 
     # the name of your result folder.
     model_save_name = "retriever-bert-base-test"
