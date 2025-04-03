@@ -172,10 +172,15 @@ def train():
 
                 if k // conf.report >= 1:
                     print("Val test")
-                    # Lưu model checkpoint
+                    # Lưu model checkpoint với thông tin optimizer và global step
                     saved_model_path_cnt = os.path.join(saved_model_path, 'loads', str(k // conf.report))
                     os.makedirs(saved_model_path_cnt, exist_ok=True)
-                    torch.save(model.state_dict(), os.path.join(saved_model_path_cnt, "model.pt"))
+                    checkpoint = {
+                        'global_step': k,  # Lưu số bước training đã thực hiện
+                        'optimizer_state_dict': optimizer.state_dict(),  # Lưu trạng thái optimizer
+                        'model_state_dict': model.state_dict()  # Lưu trạng thái của model
+                    }
+                    torch.save(checkpoint, os.path.join(saved_model_path_cnt, "model.pt"))
 
                     # Dọn dẹp các checkpoint cũ, chỉ giữ lại 3 mới nhất
                     cleanup_checkpoints()
