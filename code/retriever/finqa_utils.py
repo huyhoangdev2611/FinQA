@@ -19,7 +19,7 @@ from config import parameters as conf
 
 _SPECIAL_TOKENS_RE = re.compile(r"^\[[^ ]*\]$", re.UNICODE)
 
-sys.path.insert(0, '../utils/')
+sys.path.insert(0, '/kaggle/working/FinQA/code/utils/')
 from general_utils import table_row_to_text
 
 
