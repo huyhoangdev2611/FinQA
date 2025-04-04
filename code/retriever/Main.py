@@ -111,6 +111,7 @@ def cleanup_checkpoints():
 def train():
     """
     Hàm train chính, theo dõi loss, lưu checkpoint định kỳ và đánh giá trên tập validation.
+    Hỗ trợ tiếp tục training từ checkpoint nếu conf.resume_model_path không rỗng.
     """
     write_log(log_file, "####################INPUT PARAMETERS###################")
     for attr in conf.__dict__:
@@ -127,9 +128,19 @@ def train():
     criterion = nn.CrossEntropyLoss(reduction='none', ignore_index=-1)
     model.train()
 
+    # Nếu muốn tiếp tục training từ checkpoint, load model và optimizer
+    k = 0  # Số bước training toàn cục (global_step)
+    if conf.resume_model_path != "":
+        print("Tiếp tục training từ checkpoint:", conf.resume_model_path)
+        write_log(log_file, "Tiếp tục training từ checkpoint: " + conf.resume_model_path)
+        checkpoint = torch.load(conf.resume_model_path, map_location=torch.device(conf.device))
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        k = checkpoint.get('global_step', 0)
+        write_log(log_file, f"Đã load global_step = {k}")
+
     train_iterator = DataLoader(is_training=True, data=train_features,
                                 batch_size=conf.batch_size, shuffle=True)
-    k = 0
     record_k = 0
     record_loss = 0.0
     start_time = time.time()
