@@ -61,9 +61,9 @@ def process_row(row_in):
     return row_out
 
 def eval_program(program, table):
-    '''
+    """
     Calculate the numerical result of the program.
-    '''
+    """
     invalid_flag = 0
     this_res = "n/a"
     try:
@@ -153,11 +153,11 @@ def eval_program(program, table):
     return invalid_flag, this_res
 
 def equal_program(program1, program2):
-    '''
+    """
     Compare symbolic programs for equality.
     program1: gold
     program2: pred
-    '''
+    """
     sym_map = {}
     program1 = program1[:-1]  # remove EOF
     program1 = "|".join(program1)
@@ -293,9 +293,9 @@ def program_tokenization(original_program):
     return program
 
 def evaluate_result(json_in, json_ori):
-    '''
+    """
     Execution accuracy and program accuracy.
-    '''
+    """
     exe_correct = 0
     prog_correct = 0
 
@@ -304,31 +304,44 @@ def evaluate_result(json_in, json_ori):
     with open(json_ori) as f_in:
         data_ori = json.load(f_in)
 
+    # Xây dựng dictionary cho gold file, sử dụng key là "id"
     data_dict = {}
     for each_data in data_ori:
-        # Tạo dictionary với key là id từ file gốc
         data_dict[each_data["id"]] = each_data
 
     res_list = []
     all_res_list = []
     
     for each_data in data:
-        each_id = each_data["id"]
-        if each_id not in data_dict:
-            print(f"Warning: ID '{each_id}' không có trong file test gốc!")
+        # Lấy ID từ key "filename" trong dự đoán
+        pred_id = each_data.get("filename", None)
+        if pred_id is None:
+            print("Warning: mục dự đoán không có key 'filename'!")
             continue
-        
-        each_ori_data = data_dict[each_id]
+
+        # Nếu không tìm thấy trong data_dict, thử so khớp theo tiền tố
+        if pred_id in data_dict:
+            each_ori_data = data_dict[pred_id]
+        else:
+            found = False
+            for gold_id in data_dict:
+                if gold_id.startswith(pred_id):
+                    each_ori_data = data_dict[gold_id]
+                    found = True
+                    break
+            if not found:
+                print(f"Warning: ID '{pred_id}' không có trong file test gốc!")
+                continue
+
         table = each_ori_data["table"]
         gold_res = each_ori_data["qa"]["exe_ans"]
-        
-        # Kiểm tra key 'predicted'
-        if "predicted" in each_data:
-            pred = each_data["predicted"]
+        # Lấy dự đoán từ key "qa" -> "predicted"
+        if "predicted" in each_data.get("qa", {}):
+            pred = each_data["qa"]["predicted"]
         else:
-            print(f"Warning: ID '{each_id}' không có key 'predicted' trong file dự đoán!")
+            print(f"Warning: ID '{pred_id}' không có key 'predicted' trong phần 'qa'!")
             continue
-        
+
         gold = program_tokenization(each_ori_data["qa"]["program"])
 
         invalid_flag, exe_res = eval_program(pred, table)
@@ -338,21 +351,20 @@ def evaluate_result(json_in, json_ori):
                 
         if equal_program(gold, pred):
             if exe_res != gold_res:
-                print(each_id)
+                print(each_ori_data["id"])
                 print(gold)
                 print(pred)
                 print(gold_res)
                 print(exe_res)
-                print(each_ori_data["id"])
+            # Dùng assert để đảm bảo điều kiện này
             assert exe_res == gold_res
             prog_correct += 1
             if "".join(gold) != "".join(pred):
-                print(each_id)
+                print(each_ori_data["id"])
                 print(gold)
                 print(pred)
                 print(gold_res)
                 print(exe_res)
-                print(each_ori_data["id"])
 
         each_ori_data["qa"]["predicted"] = pred
 
