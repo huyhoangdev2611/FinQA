@@ -32,8 +32,7 @@ class parameters():
     resume_model_path = ""
 
     ### to load the trained model in test time
-    saved_model_path = output_path + \
-        "/bert-base-6k_20210427232814/saved_model/loads/3/model.pt"
+    saved_model_path = "/kaggle/input/model-retriever-165/model_165.pt"
     build_summary = False
 
     option = "rand"
