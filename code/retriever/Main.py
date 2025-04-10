@@ -218,8 +218,8 @@ def train():
 
             # Điều kiện dừng nếu đạt số bước tối đa
             if k >= max_steps:
-                print("Dừng huấn luyện sau khi đạt số bước tối đa cho 16 epoch")
-                write_log(log_file, "Dừng huấn luyện sau khi đạt số bước tối đa cho 16 epoch")
+                print("Dừng huấn luyện sau khi train xong")
+                write_log(log_file, "Dừng huấn luyện sau khi đạt số bước tối đa")
                 break
         # Kiểm tra lại điều kiện dừng sau mỗi epoch
         if k >= max_steps:
