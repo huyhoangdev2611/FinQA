@@ -124,7 +124,10 @@ def train():
     print(f"Số bước mỗi epoch: {steps_per_epoch}")
 
     # Tính max_steps cho 16 epoch
-    max_steps = steps_per_epoch * conf.epoch
+    if k > 0:  # Nếu tiếp tục từ checkpoint
+        max_steps = k + steps_per_epoch * conf.epoch  # Tiếp tục từ global_step
+    else:  # Nếu không tiếp tục từ checkpoint
+        max_steps = steps_per_epoch * conf.epoch  # Bắt đầu lại từ đầu
     print(f"Số bước tối đa (max_steps) cho {conf.epoch} epoch: {max_steps}")
 
     write_log(log_file, "####################INPUT PARAMETERS###################")
@@ -159,7 +162,6 @@ def train():
     start_time = time.time()
 
     for _ in range(conf.epoch):
-        train_iterator.reset()
         for x in train_iterator:
             # Chuyển đổi dữ liệu về tensor và đưa vào device
             input_ids = torch.tensor(x['input_ids']).to(conf.device)
@@ -218,7 +220,7 @@ def train():
 
             # Điều kiện dừng nếu đạt số bước tối đa
             if k >= max_steps:
-                print("Dừng huấn luyện sau khi train xong")
+                print("Dừng huấn luyện sau khi đạt số bước tối đa")
                 write_log(log_file, "Dừng huấn luyện sau khi đạt số bước tối đa")
                 break
         # Kiểm tra lại điều kiện dừng sau mỗi epoch
