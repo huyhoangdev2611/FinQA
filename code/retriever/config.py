@@ -29,7 +29,7 @@ class parameters():
     # private: for testing private test data
     device = "cuda"
     mode = "test"
-    resume_model_path = ""
+    resume_model_path = "/kaggle/input/model-retriever-110/model_110.pt"
 
     ### to load the trained model in test time
     saved_model_path = "/kaggle/input/model-retriever-110/model_110.pt"
