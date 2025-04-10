@@ -113,6 +113,20 @@ def train():
     Hàm train chính, theo dõi loss, lưu checkpoint định kỳ và đánh giá trên tập validation.
     Hỗ trợ tiếp tục training từ checkpoint nếu conf.resume_model_path không rỗng.
     """
+    # Đọc file train.json và tính số lượng phần tử (num_examples)
+    with open(conf.train_file, 'r') as f:
+        data = json.load(f)
+    num_examples = len(data)
+    print(f"Số lượng phần tử trong train.json: {num_examples}")
+
+    # Tính số bước mỗi epoch (steps/epoch)
+    steps_per_epoch = (num_examples + conf.batch_size - 1) // conf.batch_size  # Lấy ceiling của phép chia
+    print(f"Số bước mỗi epoch: {steps_per_epoch}")
+
+    # Tính max_steps cho 16 epoch
+    max_steps = steps_per_epoch * conf.epoch
+    print(f"Số bước tối đa (max_steps) cho {conf.epoch} epoch: {max_steps}")
+
     write_log(log_file, "####################INPUT PARAMETERS###################")
     for attr in conf.__dict__:
         value = conf.__dict__[attr]
@@ -128,7 +142,6 @@ def train():
     criterion = nn.CrossEntropyLoss(reduction='none', ignore_index=-1)
     model.train()
 
-    # Nếu muốn tiếp tục training từ checkpoint, load model và optimizer
     k = 0  # Số bước training toàn cục (global_step)
     if conf.resume_model_path != "":
         print("Tiếp tục training từ checkpoint:", conf.resume_model_path)
@@ -202,6 +215,15 @@ def train():
                     evaluate(valid_examples, valid_features, model, results_path_cnt, mode='valid')
 
                 model.train()
+
+            # Điều kiện dừng nếu đạt số bước tối đa
+            if k >= max_steps:
+                print("Dừng huấn luyện sau khi đạt số bước tối đa cho 16 epoch")
+                write_log(log_file, "Dừng huấn luyện sau khi đạt số bước tối đa cho 16 epoch")
+                break
+        # Kiểm tra lại điều kiện dừng sau mỗi epoch
+        if k >= max_steps:
+            break
 
 
 def evaluate(data_ori, data, model, ksave_dir, mode='valid'):
