@@ -135,8 +135,8 @@ def train():
     start_time = time.time()
 
     for _ in range(conf.epoch):
-        write_log(log_file, f"======== Epoch {epoch + 1}/{conf.epoch} ========")
-        print(f"======== Epoch {epoch + 1}/{conf.epoch} ========")
+        write_log(log_file, f"======== Epoch {conf.epoch + 1}/{conf.epoch} ========")
+        print(f"======== Epoch {conf.epoch + 1}/{conf.epoch} ========")
         train_iterator.reset()
         for x in train_iterator:
             # Chuyển đổi dữ liệu về tensor và đưa vào device
