@@ -123,13 +123,6 @@ def train():
     steps_per_epoch = (num_examples + conf.batch_size - 1) // conf.batch_size  # Lấy ceiling của phép chia
     print(f"Số bước mỗi epoch: {steps_per_epoch}")
 
-    # Tính max_steps cho 16 epoch
-    if k > 0:  # Nếu tiếp tục từ checkpoint
-        max_steps = k + steps_per_epoch * conf.epoch  # Tiếp tục từ global_step
-    else:  # Nếu không tiếp tục từ checkpoint
-        max_steps = steps_per_epoch * conf.epoch  # Bắt đầu lại từ đầu
-    print(f"Số bước tối đa (max_steps) cho {conf.epoch} epoch: {max_steps}")
-
     write_log(log_file, "####################INPUT PARAMETERS###################")
     for attr in conf.__dict__:
         value = conf.__dict__[attr]
@@ -154,7 +147,9 @@ def train():
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         k = checkpoint.get('global_step', 0)
         write_log(log_file, f"Đã load global_step = {k}")
-
+        
+    max_steps = k + steps_per_epoch * conf.epoch  # Tiếp tục từ global_step
+    print(f"max_steps: {max_steps}")
     train_iterator = DataLoader(is_training=True, data=train_features,
                                 batch_size=conf.batch_size, shuffle=True)
     record_k = 0
