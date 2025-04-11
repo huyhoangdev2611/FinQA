@@ -111,18 +111,7 @@ def cleanup_checkpoints():
 def train():
     """
     Hàm train chính, theo dõi loss, lưu checkpoint định kỳ và đánh giá trên tập validation.
-    Hỗ trợ tiếp tục training từ checkpoint nếu conf.resume_model_path không rỗng.
     """
-    # Đọc file train.json và tính số lượng phần tử (num_examples)
-    with open(conf.train_file, 'r') as f:
-        data = json.load(f)
-    num_examples = len(data)
-    print(f"Số lượng phần tử trong train.json: {num_examples}")
-
-    # Tính số bước mỗi epoch (steps/epoch)
-    steps_per_epoch = (num_examples + conf.batch_size - 1) // conf.batch_size  # Lấy ceiling của phép chia
-    print(f"Số bước mỗi epoch: {steps_per_epoch}")
-
     write_log(log_file, "####################INPUT PARAMETERS###################")
     for attr in conf.__dict__:
         value = conf.__dict__[attr]
@@ -138,25 +127,15 @@ def train():
     criterion = nn.CrossEntropyLoss(reduction='none', ignore_index=-1)
     model.train()
 
-    k = 0  # Số bước training toàn cục (global_step)
-    if conf.resume_model_path != "":
-        print("Tiếp tục training từ checkpoint:", conf.resume_model_path)
-        write_log(log_file, "Tiếp tục training từ checkpoint: " + conf.resume_model_path)
-        checkpoint = torch.load(conf.resume_model_path, map_location=torch.device(conf.device))
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        k = checkpoint.get('global_step', 0)
-        write_log(log_file, f"Đã load global_step = {k}")
-        
-    max_steps = k + steps_per_epoch * conf.epoch  # Tiếp tục từ global_step
-    print(f"max_steps: {max_steps}")
     train_iterator = DataLoader(is_training=True, data=train_features,
                                 batch_size=conf.batch_size, shuffle=True)
+    k = 0
     record_k = 0
     record_loss = 0.0
     start_time = time.time()
 
     for _ in range(conf.epoch):
+        train_iterator.reset()
         for x in train_iterator:
             # Chuyển đổi dữ liệu về tensor và đưa vào device
             input_ids = torch.tensor(x['input_ids']).to(conf.device)
@@ -212,15 +191,6 @@ def train():
                     evaluate(valid_examples, valid_features, model, results_path_cnt, mode='valid')
 
                 model.train()
-
-            # Điều kiện dừng nếu đạt số bước tối đa
-            if k >= max_steps:
-                print("Dừng huấn luyện sau khi đạt số bước tối đa")
-                write_log(log_file, "Dừng huấn luyện sau khi đạt số bước tối đa")
-                break
-        # Kiểm tra lại điều kiện dừng sau mỗi epoch
-        if k >= max_steps:
-            break
 
 
 def evaluate(data_ori, data, model, ksave_dir, mode='valid'):
