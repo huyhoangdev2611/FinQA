@@ -113,23 +113,29 @@ def train():
     Hàm train chính, theo dõi loss, lưu checkpoint định kỳ và đánh giá trên tập validation.
     Hỗ trợ tiếp tục training từ checkpoint nếu conf.resume_model_path không rỗng.
     """
-    # Đọc file train.json và tính số lượng phần tử
+    # Đọc file train.json và tính số lượng phần tử (num_examples)
     with open(conf.train_file, 'r') as f:
         data = json.load(f)
     num_examples = len(data)
     print(f"Số lượng phần tử trong train.json: {num_examples}")
 
-    # Tính số bước mỗi epoch
-    steps_per_epoch = (num_examples + conf.batch_size - 1) // conf.batch_size
+    # Tính số bước mỗi epoch (steps/epoch)
+    steps_per_epoch = (num_examples + conf.batch_size - 1) // conf.batch_size  # Lấy ceiling của phép chia
     print(f"Số bước mỗi epoch: {steps_per_epoch}")
 
-    # Ghi log thông số cấu hình
+    # Tính max_steps cho 16 epoch
+    if k > 0:  # Nếu tiếp tục từ checkpoint
+        max_steps = k + steps_per_epoch * conf.epoch  # Tiếp tục từ global_step
+    else:  # Nếu không tiếp tục từ checkpoint
+        max_steps = steps_per_epoch * conf.epoch  # Bắt đầu lại từ đầu
+    print(f"Số bước tối đa (max_steps) cho {conf.epoch} epoch: {max_steps}")
+
     write_log(log_file, "####################INPUT PARAMETERS###################")
     for attr in conf.__dict__:
-        write_log(log_file, f"{attr} = {conf.__dict__[attr]}")
+        value = conf.__dict__[attr]
+        write_log(log_file, f"{attr} = {value}")
     write_log(log_file, "#######################################################")
 
-    # Khởi tạo model
     model = Bert_model(hidden_size=model_config.hidden_size,
                        dropout_rate=conf.dropout_rate)
     model = nn.DataParallel(model)
@@ -139,92 +145,87 @@ def train():
     criterion = nn.CrossEntropyLoss(reduction='none', ignore_index=-1)
     model.train()
 
-    global_step = 0
-
-    # Nếu có checkpoint thì load lại
+    k = 0  # Số bước training toàn cục (global_step)
     if conf.resume_model_path != "":
         print("Tiếp tục training từ checkpoint:", conf.resume_model_path)
         write_log(log_file, "Tiếp tục training từ checkpoint: " + conf.resume_model_path)
         checkpoint = torch.load(conf.resume_model_path, map_location=torch.device(conf.device))
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        global_step = checkpoint.get('global_step', 0)
-        write_log(log_file, f"Đã load global_step = {global_step}")
-
-    # Tính tổng số bước huấn luyện
-    max_steps = global_step + steps_per_epoch * conf.epoch
-    print(f"Số bước tối đa (max_steps) cho {conf.epoch} epoch: {max_steps}")
+        k = checkpoint.get('global_step', 0)
+        write_log(log_file, f"Đã load global_step = {k}")
 
     train_iterator = DataLoader(is_training=True, data=train_features,
                                 batch_size=conf.batch_size, shuffle=True)
+    record_k = 0
     record_loss = 0.0
-    record_count = 0
     start_time = time.time()
 
     for _ in range(conf.epoch):
-        for batch in train_iterator:
-            # Chuẩn bị dữ liệu
-            input_ids = torch.tensor(batch['input_ids']).to(conf.device)
-            input_mask = torch.tensor(batch['input_mask']).to(conf.device)
-            segment_ids = torch.tensor(batch['segment_ids']).to(conf.device)
-            label = torch.tensor(batch['label']).to(conf.device)
+        for x in train_iterator:
+            # Chuyển đổi dữ liệu về tensor và đưa vào device
+            input_ids = torch.tensor(x['input_ids']).to(conf.device)
+            input_mask = torch.tensor(x['input_mask']).to(conf.device)
+            segment_ids = torch.tensor(x['segment_ids']).to(conf.device)
+            label = torch.tensor(x['label']).to(conf.device)
 
             model.zero_grad()
             optimizer.zero_grad()
 
-            logits = model(True, input_ids, input_mask, segment_ids, device=conf.device)
-            loss = criterion(logits.view(-1, logits.shape[-1]), label.view(-1))
-            loss = loss.sum()
+            this_logits = model(True, input_ids, input_mask, segment_ids, device=conf.device)
+            this_loss = criterion(this_logits.view(-1, this_logits.shape[-1]), label.view(-1))
+            this_loss = this_loss.sum()
 
-            # Ghi nhận loss
-            record_loss += loss.item() * 100
-            record_count += 1
-            global_step += 1
+            record_loss += this_loss.item() * 100
+            record_k += 1
+            k += 1
 
-            loss.backward()
+            this_loss.backward()
             optimizer.step()
 
-            # Báo cáo loss định kỳ
-            if global_step % conf.report_loss == 0:
-                avg_loss = record_loss / record_count
-                write_log(log_file, f"{global_step} : loss = {avg_loss:.3f}")
+            if k > 1 and k % conf.report_loss == 0:
+                avg_loss = record_loss / record_k
+                write_log(log_file, f"{k} : loss = {avg_loss:.3f}")
                 record_loss = 0.0
-                record_count = 0
+                record_k = 0
 
-            # Báo cáo và lưu checkpoint định kỳ
-            if global_step % conf.report == 0:
-                print("Round:", global_step // conf.report)
+            if k > 1 and k % conf.report == 0:
+                print("Round:", k / conf.report)
+                model.eval()
                 cost_time = time.time() - start_time
-                write_log(log_file, f"{global_step // conf.report} : time = {cost_time:.3f}")
+                write_log(log_file, f"{k // conf.report} : time = {cost_time:.3f}")
                 start_time = time.time()
 
-                print("Validation...")
-                model.eval()
+                if k // conf.report >= 1:
+                    print("Val test")
+                    # Lưu model checkpoint với thông tin optimizer và global step
+                    saved_model_path_cnt = os.path.join(saved_model_path, 'loads', str(k // conf.report))
+                    os.makedirs(saved_model_path_cnt, exist_ok=True)
+                    checkpoint = {
+                        'global_step': k,  # Lưu số bước training đã thực hiện
+                        'optimizer_state_dict': optimizer.state_dict(),  # Lưu trạng thái optimizer
+                        'model_state_dict': model.state_dict()  # Lưu trạng thái của model
+                    }
+                    torch.save(checkpoint, os.path.join(saved_model_path_cnt, "model.pt"))
 
-                # Lưu checkpoint
-                checkpoint_dir = os.path.join(saved_model_path, 'loads', str(global_step // conf.report))
-                os.makedirs(checkpoint_dir, exist_ok=True)
-                torch.save({
-                    'global_step': global_step,
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'model_state_dict': model.state_dict()
-                }, os.path.join(checkpoint_dir, "model.pt"))
+                    # Dọn dẹp các checkpoint cũ, chỉ giữ lại 3 mới nhất
+                    cleanup_checkpoints()
 
-                cleanup_checkpoints()
-
-                # Đánh giá và lưu kết quả
-                results_dir = os.path.join(results_path, 'loads', str(global_step // conf.report))
-                os.makedirs(results_dir, exist_ok=True)
-                evaluate(valid_examples, valid_features, model, results_dir, mode='valid')
+                    # Đánh giá trên tập validation và lưu kết quả
+                    results_path_cnt = os.path.join(results_path, 'loads', str(k // conf.report))
+                    os.makedirs(results_path_cnt, exist_ok=True)
+                    evaluate(valid_examples, valid_features, model, results_path_cnt, mode='valid')
 
                 model.train()
 
-            # Dừng khi đạt max_steps
-            if global_step >= max_steps:
+            # Điều kiện dừng nếu đạt số bước tối đa
+            if k >= max_steps:
                 print("Dừng huấn luyện sau khi đạt số bước tối đa")
                 write_log(log_file, "Dừng huấn luyện sau khi đạt số bước tối đa")
-                return
-
+                break
+        # Kiểm tra lại điều kiện dừng sau mỗi epoch
+        if k >= max_steps:
+            break
 
 
 def evaluate(data_ori, data, model, ksave_dir, mode='valid'):
